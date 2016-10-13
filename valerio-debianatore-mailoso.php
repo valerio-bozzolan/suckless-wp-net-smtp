@@ -25,7 +25,7 @@ function wp_mail($to, $subject, $message, $additional_headers = "", $more = "") 
 		die("Unable to instantiate Net_SMTP object {$smtp->getUserInfo()} \n");
 	}
 
-	// $smtp->setDebug(true);
+	WP_DEBUG && $smtp->setDebug(true);
 
 	if( PEAR::isError($e = $smtp->connect()) ) {
 		die("Error connect {$e->getMessage()} ....... \n");
