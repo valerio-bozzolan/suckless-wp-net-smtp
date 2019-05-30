@@ -1,7 +1,7 @@
 <?php
 /*
-Plugin Name: WordPress Net_SMTP
-Description: Send SMTP mails with the Net_SMTP class included in your Debian GNU/Linux distribution. Simple! #nocrap
+Plugin Name: Suckless WordPress Net_SMTP
+Description: Send e-mails using the Net_SMTP library included in your Debian GNU/Linux distribution. Simple! #nocrap
 Author: Valerio Bozzolan
 Author URI: https://boz.reyboz.it
 Version: 0000000.0.0.-1.0
@@ -10,13 +10,22 @@ License: GPLv3 or later
 
 if( ! function_exists( 'wp_mail' ) ):
 
+if( is_admin() && !defined( 'WP_NET_SMTP_HOST' ) ) {
+	die("Awesome! You installed wp-net-smtp! Now please define these in your wp-config.php: \n<br />".
+		"define( 'WP_NET_SMTP_HOST', 'mail.example.com' );\n<br />".
+		"define( 'WP_NET_SMTP_PORT', '465' );\n<br />".
+		"define( 'WP_NET_SMTP_AUTH', 'PLAIN' );\n<br />".
+		"define( 'WP_NET_SMTP_FROM', 'noreply@example.com' );\n<br />".
+		"define( 'WP_NET_SMTP_PASS', 'super-secret' );" );
+}
+
 function error_wp_net_smtp( $title, $message ) {
 	if( ! WP_DEBUG ) {
 		$message = "Enable WP_DEBUG to show";
 	}
 
 	printf(
-		"<p>Debianatore Mailoso. %s: %s.</p>\n",
+		"<p>Suckless WP Net SMTP error [%s]: %s.</p>\n",
 		$title,
 		esc_html( $message )
 	);
@@ -45,9 +54,11 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		return false;
 	}
 
-	WP_WP_DEBUG && $smtp->setDebug(true);
+	if( WP_DEBUG ) {
+		$smtp->setDebug( true );
+	}
 
-	if( PEAR::isError($e = $smtp->connect()) ) {
+	if( PEAR::isError( $e = $smtp->connect() ) ) {
 		error_wp_net_smtp(
 			'Error connect',
 			$e->getMessage()
@@ -55,7 +66,7 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		return false;
 	}
 
-	if( PEAR::isError($e = $smtp->auth(WP_NET_SMTP_FROM, WP_NET_SMTP_PASS, WP_NET_SMTP_AUTH, true, '', true) ) ) {
+	if( PEAR::isError( $e = $smtp->auth( WP_NET_SMTP_FROM, WP_NET_SMTP_PASS, WP_NET_SMTP_AUTH, true, '', true ) ) ) {
 		error_wp_net_smtp(
 			'Error auth',
 			$e->getMessage()
@@ -63,7 +74,7 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		return false;
 	}
 
-	if( PEAR::isError( $smtp->mailFrom(WP_NET_SMTP_FROM) ) ) {
+	if( PEAR::isError( $smtp->mailFrom( WP_NET_SMTP_FROM ) ) ) {
 		error_wp_net_smtp(
 			'Error set from',
 			$res->getMessage()
