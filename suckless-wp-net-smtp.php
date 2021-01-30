@@ -9,27 +9,30 @@ License: GPLv3 or later
 */
 
 /**
+ * Show an useful error message in the case
+ * the sysadmin has not read the fantastic manual.
+ */
+if( is_admin() && !defined( 'WP_NET_SMTP_HOST' ) ) {
+	echo "Awesome! You installed wp-net-smtp! Now please define these in your wp-config.php: \n<br />".
+		"define( 'WP_NET_SMTP_HOST', 'mail.example.com' );\n<br />".
+		"define( 'WP_NET_SMTP_PORT', '465' );\n<br />".
+		"define( 'WP_NET_SMTP_AUTH', 'PLAIN' );\n<br />".
+		"define( 'WP_NET_SMTP_FROM', 'noreply@example.com' );\n<br />".
+		"define( 'WP_NET_SMTP_PASS', 'super-secret' );";
+}
+
+/**
  * Your WordPress will explode if you installed
  * another extension providing the wp_mail() function.
  *
  * This wraps everything inside a big 'if' like a kebab.
  *
  * The end of this file should end with an 'endif'.
+ *
+ * It also does not provide any wp_mail() function if the configuration is
+ * not partially completed.
  */
-if( ! function_exists( 'wp_mail' ) ):
-
-/**
- * Die with an useful error message in the case
- * the sysadmin has not read the fantastic manual.
- */
-if( is_admin() && !defined( 'WP_NET_SMTP_HOST' ) ) {
-	die("Awesome! You installed wp-net-smtp! Now please define these in your wp-config.php: \n<br />".
-		"define( 'WP_NET_SMTP_HOST', 'mail.example.com' );\n<br />".
-		"define( 'WP_NET_SMTP_PORT', '465' );\n<br />".
-		"define( 'WP_NET_SMTP_AUTH', 'PLAIN' );\n<br />".
-		"define( 'WP_NET_SMTP_FROM', 'noreply@example.com' );\n<br />".
-		"define( 'WP_NET_SMTP_PASS', 'super-secret' );" );
-}
+if( ! function_exists( 'wp_mail' ) && defined( 'WP_NET_SMTP_HOST' ) ):
 
 /**
  * This supid function is useful to throw
