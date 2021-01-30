@@ -8,8 +8,20 @@ Version: 0000000.0.0.-1.0
 License: GPLv3 or later
 */
 
+/**
+ * Your WordPress will explode if you installed
+ * another extension providing the wp_mail() function.
+ *
+ * This wraps everything inside a big 'if' like a kebab.
+ *
+ * The end of this file should end with an 'endif'.
+ */
 if( ! function_exists( 'wp_mail' ) ):
 
+/**
+ * Die with an useful error message in the case
+ * the sysadmin has not read the fantastic manual.
+ */
 if( is_admin() && !defined( 'WP_NET_SMTP_HOST' ) ) {
 	die("Awesome! You installed wp-net-smtp! Now please define these in your wp-config.php: \n<br />".
 		"define( 'WP_NET_SMTP_HOST', 'mail.example.com' );\n<br />".
@@ -19,11 +31,21 @@ if( is_admin() && !defined( 'WP_NET_SMTP_HOST' ) ) {
 		"define( 'WP_NET_SMTP_PASS', 'super-secret' );" );
 }
 
+/**
+ * This supid function is useful to throw
+ * a custom error message with a custom title and a message.
+ *
+ * @param string $title
+ * @param string $message
+ */
 function error_wp_net_smtp( $title, $message ) {
+
+	// no debug no party
 	if( ! WP_DEBUG ) {
-		$message = "Enable WP_DEBUG to show";
+		$message = "Enable WP_DEBUG to show the specific error message";
 	}
 
+	// TODO: handle
 	printf(
 		"<p>Suckless WP Net SMTP error [%s]: %s.</p>\n",
 		$title,
@@ -31,7 +53,17 @@ function error_wp_net_smtp( $title, $message ) {
 	);
 }
 
+/**
+ * Define the WordPress function able to send an email to someone
+ *
+ * @param string $to
+ * @param string $subject
+ * @param string $message
+ */
 function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' ) {
+
+	// the sysadmin has to install the php-net-smtp package
+	//    sudo apt install php-net-smtp
 	require_once 'Net/SMTP.php';
 
 	// Force array
@@ -39,13 +71,15 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		$to = [ $to ];
 	}
 
+	// tro to fix some stupid providers
 	$socket_options = [
 		'ssl' => [
 			'verify_peer_name' => false,
-			'verify_peer'      => false
-		]
+			'verify_peer'      => false,
+		],
 	];
 
+	// try the connection
 	if( ! ($smtp = new Net_SMTP( WP_NET_SMTP_HOST, WP_NET_SMTP_PORT, null, false, 0, $socket_options ) ) ) {
 		error_wp_net_smtp(
 			'Unable to instantiate Net_SMTP object',
@@ -54,10 +88,12 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		return false;
 	}
 
+	// eventually enable debug
 	if( WP_DEBUG ) {
 		$smtp->setDebug( true );
 	}
 
+	// try to connect
 	if( PEAR::isError( $e = $smtp->connect() ) ) {
 		error_wp_net_smtp(
 			'Error connect',
@@ -66,6 +102,7 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		return false;
 	}
 
+	// try to authenticate
 	if( PEAR::isError( $e = $smtp->auth( WP_NET_SMTP_FROM, WP_NET_SMTP_PASS, WP_NET_SMTP_AUTH, true, '', true ) ) ) {
 		error_wp_net_smtp(
 			'Error auth',
@@ -74,6 +111,7 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		return false;
 	}
 
+	// try to set the sender
 	if( PEAR::isError( $smtp->mailFrom( WP_NET_SMTP_FROM ) ) ) {
 		error_wp_net_smtp(
 			'Error set from',
@@ -82,7 +120,10 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		return false;
 	}
 
+	// process each single receiver
 	foreach( $to as $i => $single_to ) {
+
+		// skip eventually invalid addresses
 		if( filter_var( $single_to, FILTER_VALIDATE_EMAIL ) === false ) {
 			unset( $to[$i] );
 
@@ -93,6 +134,7 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 			continue;
 		}
 
+		// something goes wrong
 		if( PEAR::isError( $res = $smtp->rcptTo( $single_to ) ) ) {
 			error_wp_net_smtp(
 				'Error set To',
@@ -102,6 +144,7 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		}
 	}
 
+	// no receiver no party
 	if( count( $to ) === 0 ) {
 		error_wp_net_smtp( 'No email sent', 'no addresses' );
 		return false;
@@ -123,6 +166,7 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 		'X-Mailer'     => 'Net/SMTP.php via WordPress in Debian GNU/Linux',
 	];
 
+	// merge the headers
 	$merge = [];
 	foreach( $headers as $header => $value ) {
 		$value = trim( $value );
@@ -137,8 +181,12 @@ function wp_mail( $to, $subject, $message, $additional_headers = '', $more = '' 
 	return ! $error;
 }
 
-endif;
-
 if( defined( 'WP_NET_SMTP_FIX_SSL' ) && WP_NET_SMTP_FIX_SSL ) {
 	add_filter( 'https_local_ssl_verify', '__return_false' );
 }
+
+/**
+ * This closes the initial big 'if' condition
+ * wrapping the whole file as a kebab.
+ */
+endif;
